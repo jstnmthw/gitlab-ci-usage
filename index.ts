@@ -8,15 +8,26 @@ import pLimit from "p-limit";
 import { formatISO, format } from "date-fns";
 import { validateEnv, parseArgs } from "./lib/config.js";
 import { createClient } from "./lib/gitlab.js";
+import { createMockClient } from "./lib/mock-client.js";
 import { printCLIReport, buildMarkdownReport } from "./lib/report.js";
-import type { ProjectStat } from "./lib/types.js";
+import type { Config, GitLabClient, ProjectStat } from "./lib/types.js";
 
 // ── Configuration ────────────────────────────────────────────────────
 
 try { process.loadEnvFile(); } catch { /* no .env file — rely on environment variables */ }
 const args = parseArgs();
-const config = validateEnv();
-const client = createClient(config);
+
+let config: Config;
+let client: GitLabClient;
+
+if (args.dryRun) {
+  console.log(chalk.yellow("Dry-run mode — using mock data, no API calls will be made.\n"));
+  config = { token: "mock", baseUrl: "https://gitlab.example.com", groupId: "1" };
+  client = createMockClient(args.startDate);
+} else {
+  config = validateEnv();
+  client = createClient(config);
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────
 

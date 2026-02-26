@@ -32,6 +32,10 @@ pnpm start -- --project 12345
 
 # Custom output filename
 pnpm start -- --output report.md
+
+# Preview with mock data (no GitLab credentials needed)
+pnpm start -- --dry-run
+pnpm start -- --dry-run --days 7 --output preview.md
 ```
 
 ## CLI Options
@@ -41,6 +45,7 @@ pnpm start -- --output report.md
 | `--days <number>` | Number of days to look back | `30` |
 | `--project <id>` | Restrict to a single project | — |
 | `--output <filename>` | Report filename | `gitlab-ci-usage-report.md` |
+| `--dry-run` | Use mock data instead of calling the GitLab API | — |
 
 ## Environment Variables
 
@@ -83,6 +88,7 @@ Rate-limited responses (HTTP 429) are automatically retried after the `Retry-Aft
 │   ├── types.ts           # Shared type definitions
 │   ├── config.ts          # env validation, CLI arg parsing
 │   ├── gitlab.ts          # GitLab API client (pagination, rate-limit retry)
+│   ├── mock-client.ts     # Mock GitLab client for --dry-run mode
 │   └── report.ts          # CLI and Markdown report generation
 ├── test/
 │   ├── fixtures/

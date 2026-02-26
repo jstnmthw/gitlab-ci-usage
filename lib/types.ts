@@ -10,6 +10,7 @@ export interface ParsedArgs {
   output: string;
   startDate: Date;
   endDate: Date;
+  dryRun: boolean;
 }
 
 export interface GitLabProject {
