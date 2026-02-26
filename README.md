@@ -6,12 +6,14 @@ Lightweight CLI tool that calculates total GitLab CI job runtime across all proj
 
 - Node.js 20+
 - pnpm (or npm/yarn)
+- TypeScript 5.9+
 - GitLab personal access token with `read_api` scope
 
 ## Setup
 
 ```bash
 pnpm install
+pnpm build
 cp .env.example .env
 # Edit .env with your GitLab token, base URL, and group ID
 ```
@@ -20,16 +22,16 @@ cp .env.example .env
 
 ```bash
 # Analyze the last 30 days (default)
-node index.js
+pnpm start
 
 # Look back 90 days
-node index.js --days 90
+pnpm start -- --days 90
 
 # Restrict to a single project
-node index.js --project 12345
+pnpm start -- --project 12345
 
 # Custom output filename
-node index.js --output report.md
+pnpm start -- --output report.md
 ```
 
 ## CLI Options
@@ -65,7 +67,7 @@ The tool produces:
 
 ## How It Works
 
-1. Loads configuration from `.env` and CLI arguments.
+1. Loads configuration from `.env` (via Node's `process.loadEnvFile()`) and CLI arguments.
 2. Fetches all projects in the specified group (including subgroups) via the GitLab API, or a single project if `--project` is provided.
 3. Fetches CI jobs for each project concurrently (up to 5 at a time), filtering to the configured date range. Pagination stops early when it encounters jobs older than the start date.
 4. Aggregates durations and computes per-project and total minutes/hours.
@@ -76,18 +78,22 @@ Rate-limited responses (HTTP 429) are automatically retried after the `Retry-Aft
 ## Project Structure
 
 ```
-├── index.js              # CLI entrypoint and orchestration
+├── index.ts               # CLI entrypoint and orchestration
 ├── lib/
-│   ├── config.js         # .env loading, env validation, CLI arg parsing
-│   ├── gitlab.js         # GitLab API client (pagination, rate-limit retry)
-│   └── report.js         # CLI and Markdown report generation
+│   ├── types.ts           # Shared type definitions
+│   ├── config.ts          # env validation, CLI arg parsing
+│   ├── gitlab.ts          # GitLab API client (pagination, rate-limit retry)
+│   └── report.ts          # CLI and Markdown report generation
 ├── test/
 │   ├── fixtures/
-│   │   └── gitlab-api.js # Mock response factories
-│   ├── config.test.js    # Tests for config loading and validation
-│   ├── gitlab.test.js    # Tests for API client with mocked fetch
-│   └── report.test.js    # Tests for report output
-└── vitest.config.js
+│   │   └── gitlab-api.ts  # Mock response factories
+│   ├── config.test.ts     # Tests for config loading and validation
+│   ├── gitlab.test.ts     # Tests for API client with mocked fetch
+│   └── report.test.ts     # Tests for report output
+├── tsconfig.json          # TypeScript config (type-checking)
+├── tsconfig.build.json    # TypeScript config (build output to dist/)
+├── eslint.config.js       # ESLint + typescript-eslint config
+└── vitest.config.ts
 ```
 
 ## Testing
@@ -97,6 +103,12 @@ Tests use [Vitest](https://vitest.dev/) with mocked `global.fetch` — no real G
 ```bash
 # Run all tests
 pnpm test
+
+# Type-check without emitting
+pnpm check-types
+
+# Lint
+pnpm lint
 
 # Verbose output
 pnpm vitest run --reporter=verbose
@@ -109,6 +121,6 @@ pnpm vitest
 
 | Module | What's tested |
 | ------ | ------------- |
-| `lib/config.js` | `.env` parsing, comment/blank handling, no-clobber behavior, env validation, missing var exits, trailing slash stripping |
-| `lib/gitlab.js` | Single-project fetch, paginated group fetch, date filtering, early-stop on old data, incomplete job filtering, 429 retry, error throwing |
-| `lib/report.js` | Markdown structure and sections, table row correctness, locale number formatting, CLI stdout output |
+| `lib/config.ts` | env validation, missing var exits, trailing slash stripping |
+| `lib/gitlab.ts` | Single-project fetch, paginated group fetch, date filtering, early-stop on old data, incomplete job filtering, 429 retry, error throwing |
+| `lib/report.ts` | Markdown structure and sections, table row correctness, locale number formatting, CLI stdout output |
