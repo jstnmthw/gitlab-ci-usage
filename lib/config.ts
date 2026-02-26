@@ -37,7 +37,7 @@ export function parseArgs(): ParsedArgs {
     .description("Calculate total GitLab CI job runtime across all projects in a group")
     .option("--days <number>", "number of days to look back", "30")
     .option("--project <id>", "restrict to a single project ID")
-    .option("--output <filename>", "report filename", "gitlab-ci-usage-report.md")
+    .option("--output <filename>", "report filename", "report.md")
     .option("--dry-run", "use mock data instead of calling the GitLab API")
     .parse();
 

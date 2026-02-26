@@ -13,7 +13,6 @@ Lightweight CLI tool that calculates total GitLab CI job runtime across all proj
 
 ```bash
 pnpm install
-pnpm build
 cp .env.example .env
 # Edit .env with your GitLab token, base URL, and group ID
 ```
@@ -25,17 +24,17 @@ cp .env.example .env
 pnpm start
 
 # Look back 90 days
-pnpm start -- --days 90
+pnpm start --days 90
 
 # Restrict to a single project
-pnpm start -- --project 12345
+pnpm start --project 12345
 
 # Custom output filename
-pnpm start -- --output report.md
+pnpm start --output report.md
 
 # Preview with mock data (no GitLab credentials needed)
-pnpm start -- --dry-run
-pnpm start -- --dry-run --days 7 --output preview.md
+pnpm start --dry-run
+pnpm start --dry-run --days 7 --output preview.md
 ```
 
 ## CLI Options
@@ -44,7 +43,7 @@ pnpm start -- --dry-run --days 7 --output preview.md
 | ------ | ----------- | ------- |
 | `--days <number>` | Number of days to look back | `30` |
 | `--project <id>` | Restrict to a single project | — |
-| `--output <filename>` | Report filename | `gitlab-ci-usage-report.md` |
+| `--output <filename>` | Report filename | `report.md` |
 | `--dry-run` | Use mock data instead of calling the GitLab API | — |
 
 ## Environment Variables
@@ -68,11 +67,11 @@ Create one at: **Settings → Access Tokens** or see the [GitLab PAT documentati
 The tool produces:
 
 1. **CLI output** — A color-formatted summary with per-project breakdown, printed to stdout.
-2. **Markdown report** — A detailed report written to the output file (default: `gitlab-ci-usage-report.md`) with metadata, cost projection placeholders, and a per-project table.
+2. **Markdown report** — A detailed report written to `reports/` (default: `reports/report.md`) with metadata, cost projection placeholders, and a per-project table.
 
 ## How It Works
 
-1. Loads configuration from `.env` (via Node's `process.loadEnvFile()`) and CLI arguments.
+1. Loads configuration from `.env` and CLI arguments.
 2. Fetches all projects in the specified group (including subgroups) via the GitLab API, or a single project if `--project` is provided.
 3. Fetches CI jobs for each project concurrently (up to 5 at a time), filtering to the configured date range. Pagination stops early when it encounters jobs older than the start date.
 4. Aggregates durations and computes per-project and total minutes/hours.
@@ -96,8 +95,7 @@ Rate-limited responses (HTTP 429) are automatically retried after the `Retry-Aft
 │   ├── config.test.ts     # Tests for config loading and validation
 │   ├── gitlab.test.ts     # Tests for API client with mocked fetch
 │   └── report.test.ts     # Tests for report output
-├── tsconfig.json          # TypeScript config (type-checking)
-├── tsconfig.build.json    # TypeScript config (build output to dist/)
+├── tsconfig.json          # TypeScript config (type-checking only)
 ├── eslint.config.js       # ESLint + typescript-eslint config
 └── vitest.config.ts
 ```

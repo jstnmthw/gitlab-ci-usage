@@ -1,6 +1,6 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 
-import { writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import chalk from "chalk";
 import ora from "ora";
@@ -107,7 +107,14 @@ try {
   printCLIReport(summary);
 
   const md = buildMarkdownReport(summary);
-  const outputPath = resolve(args.output);
+  const reportsDir = resolve(import.meta.dirname, "reports");
+  mkdirSync(reportsDir, { recursive: true });
+  const stamp = format(new Date(), "yyyyMMdd-HHmmss");
+  const ext = args.output.lastIndexOf(".");
+  const filename = ext === -1
+    ? `${args.output}-${stamp}`
+    : `${args.output.slice(0, ext)}-${stamp}${args.output.slice(ext)}`;
+  const outputPath = resolve(reportsDir, filename);
   writeFileSync(outputPath, md);
   console.log(chalk.green(`Report written to ${outputPath}`));
 

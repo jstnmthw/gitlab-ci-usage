@@ -3,4 +3,4 @@ dist/
 .env
 .claude/
 *.log
-gitlab-ci-usage-report.md
+reports/
