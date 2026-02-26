@@ -1,47 +1,21 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { program } from "commander";
 import chalk from "chalk";
 import { subDays } from "date-fns";
 import type { Config, ParsedArgs } from "./types.js";
 
-export function loadEnv(dir: string = resolve(import.meta.dirname, "..")): void {
-  try {
-    const content = readFileSync(resolve(dir, ".env"), "utf-8");
-    for (const line of content.split("\n")) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-      const idx = trimmed.indexOf("=");
-      if (idx === -1) continue;
-      const key = trimmed.slice(0, idx).trim();
-      const raw = trimmed.slice(idx + 1).trim();
-      const value = raw.replace(/^(["'])(.*)\1$/, "$2");
-      if (!process.env[key]) {
-        process.env[key] = value;
-      }
-    }
-  } catch {
-    // No .env file — rely on environment variables
-  }
-}
-
 function requireEnv(name: string): string {
-  const value = name === "GITLAB_BASE_URL"
-    ? process.env[name]?.replace(/\/+$/, "")
-    : process.env[name];
-
+  const value = process.env[name];
   if (!value) {
     console.error(chalk.red(`Missing required environment variable: ${name}`));
     console.error(chalk.red("Copy .env.example to .env and fill in your values."));
     process.exit(1);
   }
-
   return value;
 }
 
 export function validateEnv(): Config {
   const token = requireEnv("GITLAB_TOKEN");
-  const baseUrl = requireEnv("GITLAB_BASE_URL");
+  const baseUrl = requireEnv("GITLAB_BASE_URL").replace(/\/+$/, "");
   const groupId = requireEnv("GITLAB_GROUP_ID");
 
   if (!baseUrl.startsWith("https://")) {

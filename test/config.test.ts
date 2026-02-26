@@ -1,67 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { writeFileSync, mkdtempSync } from "node:fs";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
 
-import { loadEnv, validateEnv } from "../lib/config.js";
-
-describe("loadEnv()", () => {
-  let tempDir: string;
-  const savedEnv: Record<string, string | undefined> = {};
-
-  beforeEach(() => {
-    tempDir = mkdtempSync(join(tmpdir(), "gitlab-ci-usage-test-"));
-    for (const key of ["TEST_VAR_A", "TEST_VAR_B", "GITLAB_TOKEN", "GITLAB_BASE_URL", "GITLAB_GROUP_ID"]) {
-      savedEnv[key] = process.env[key];
-      Reflect.deleteProperty(process.env, key);
-    }
-  });
-
-  afterEach(() => {
-    for (const [key, val] of Object.entries(savedEnv)) {
-      if (val === undefined) Reflect.deleteProperty(process.env, key);
-      else process.env[key] = val;
-    }
-  });
-
-  it("reads a .env file into process.env", () => {
-    writeFileSync(join(tempDir, ".env"), "TEST_VAR_A=hello\nTEST_VAR_B=world\n");
-    loadEnv(tempDir);
-    expect(process.env.TEST_VAR_A).toBe("hello");
-    expect(process.env.TEST_VAR_B).toBe("world");
-  });
-
-  it("skips comments and blank lines", () => {
-    writeFileSync(join(tempDir, ".env"), "# this is a comment\n\nTEST_VAR_A=value\n\n# another comment\n");
-    loadEnv(tempDir);
-    expect(process.env.TEST_VAR_A).toBe("value");
-  });
-
-  it("does not overwrite existing vars", () => {
-    process.env.TEST_VAR_A = "original";
-    writeFileSync(join(tempDir, ".env"), "TEST_VAR_A=overwritten\n");
-    loadEnv(tempDir);
-    expect(process.env.TEST_VAR_A).toBe("original");
-  });
-
-  it("strips surrounding double quotes from values", () => {
-    writeFileSync(join(tempDir, ".env"), 'TEST_VAR_A="hello world"\n');
-    loadEnv(tempDir);
-    expect(process.env.TEST_VAR_A).toBe("hello world");
-  });
-
-  it("strips surrounding single quotes from values", () => {
-    writeFileSync(join(tempDir, ".env"), "TEST_VAR_A='hello world'\n");
-    loadEnv(tempDir);
-    expect(process.env.TEST_VAR_A).toBe("hello world");
-  });
-
-  it("does not strip mismatched quotes", () => {
-    writeFileSync(join(tempDir, ".env"), "TEST_VAR_A=\"hello'\n");
-    loadEnv(tempDir);
-    expect(process.env.TEST_VAR_A).toBe("\"hello'");
-  });
-});
+import { validateEnv } from "../lib/config.js";
 
 describe("validateEnv()", () => {
   const savedEnv: Record<string, string | undefined> = {};

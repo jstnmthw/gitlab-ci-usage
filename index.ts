@@ -6,14 +6,14 @@ import chalk from "chalk";
 import ora from "ora";
 import pLimit from "p-limit";
 import { formatISO, format } from "date-fns";
-import { loadEnv, validateEnv, parseArgs } from "./lib/config.js";
+import { validateEnv, parseArgs } from "./lib/config.js";
 import { createClient } from "./lib/gitlab.js";
 import { printCLIReport, buildMarkdownReport } from "./lib/report.js";
 import type { ProjectStat } from "./lib/types.js";
 
 // ── Configuration ────────────────────────────────────────────────────
 
-loadEnv();
+try { process.loadEnvFile(); } catch { /* no .env file — rely on environment variables */ }
 const args = parseArgs();
 const config = validateEnv();
 const client = createClient(config);
