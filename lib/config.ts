@@ -3,8 +3,9 @@ import { resolve } from "node:path";
 import { program } from "commander";
 import chalk from "chalk";
 import { subDays } from "date-fns";
+import type { Config, ParsedArgs } from "./types.js";
 
-export function loadEnv(dir = resolve(import.meta.dirname, "..")) {
+export function loadEnv(dir: string = resolve(import.meta.dirname, "..")): void {
   try {
     const content = readFileSync(resolve(dir, ".env"), "utf-8");
     for (const line of content.split("\n")) {
@@ -24,22 +25,24 @@ export function loadEnv(dir = resolve(import.meta.dirname, "..")) {
   }
 }
 
-export function validateEnv() {
-  const token = process.env.GITLAB_TOKEN;
-  const baseUrl = process.env.GITLAB_BASE_URL?.replace(/\/+$/, "");
-  const groupId = process.env.GITLAB_GROUP_ID;
+function requireEnv(name: string): string {
+  const value = name === "GITLAB_BASE_URL"
+    ? process.env[name]?.replace(/\/+$/, "")
+    : process.env[name];
 
-  for (const [name, value] of Object.entries({
-    GITLAB_TOKEN: token,
-    GITLAB_BASE_URL: baseUrl,
-    GITLAB_GROUP_ID: groupId,
-  })) {
-    if (!value) {
-      console.error(chalk.red(`Missing required environment variable: ${name}`));
-      console.error(chalk.red("Copy .env.example to .env and fill in your values."));
-      process.exit(1);
-    }
+  if (!value) {
+    console.error(chalk.red(`Missing required environment variable: ${name}`));
+    console.error(chalk.red("Copy .env.example to .env and fill in your values."));
+    process.exit(1);
   }
+
+  return value;
+}
+
+export function validateEnv(): Config {
+  const token = requireEnv("GITLAB_TOKEN");
+  const baseUrl = requireEnv("GITLAB_BASE_URL");
+  const groupId = requireEnv("GITLAB_GROUP_ID");
 
   if (!baseUrl.startsWith("https://")) {
     console.error(chalk.red("GITLAB_BASE_URL must use HTTPS to protect your token in transit."));
@@ -54,7 +57,7 @@ export function validateEnv() {
   return { token, baseUrl, groupId };
 }
 
-export function parseArgs() {
+export function parseArgs(): ParsedArgs {
   program
     .name("gitlab-ci-usage")
     .description("Calculate total GitLab CI job runtime across all projects in a group")
@@ -63,7 +66,7 @@ export function parseArgs() {
     .option("--output <filename>", "report filename", "gitlab-ci-usage-report.md")
     .parse();
 
-  const opts = program.opts();
+  const opts = program.opts<{ days: string; project?: string; output: string }>();
 
   const days = parseInt(opts.days, 10);
   if (!Number.isInteger(days) || days <= 0) {
@@ -71,17 +74,18 @@ export function parseArgs() {
     process.exit(1);
   }
 
+  let project: number | undefined;
   if (opts.project !== undefined) {
     const pid = parseInt(opts.project, 10);
     if (!Number.isInteger(pid) || pid <= 0) {
       console.error(chalk.red("--project must be a valid numeric ID"));
       process.exit(1);
     }
-    opts.project = pid;
+    project = pid;
   }
 
   const endDate = new Date();
   const startDate = subDays(endDate, days);
 
-  return { days, project: opts.project, output: opts.output, startDate, endDate };
+  return { days, project, output: opts.output, startDate, endDate };
 }

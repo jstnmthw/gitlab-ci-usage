@@ -9,6 +9,7 @@ import { formatISO, format } from "date-fns";
 import { loadEnv, validateEnv, parseArgs } from "./lib/config.js";
 import { createClient } from "./lib/gitlab.js";
 import { printCLIReport, buildMarkdownReport } from "./lib/report.js";
+import type { ProjectStat } from "./lib/types.js";
 
 // ── Configuration ────────────────────────────────────────────────────
 
@@ -19,12 +20,12 @@ const client = createClient(config);
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
-const round2 = (n) => Math.round(n * 100) / 100;
+const round2 = (n: number): number => Math.round(n * 100) / 100;
 
 // ── Main ─────────────────────────────────────────────────────────────
 
 const spinner = ora("Starting...").start();
-const onRetry = (msg) => { spinner.text = msg; };
+const onRetry = (msg: string): void => { spinner.text = msg; };
 
 try {
   // Fetch projects
@@ -44,11 +45,11 @@ try {
   const projectResults = await Promise.all(
     projects.map((project) =>
       limit(async () => {
-        spinner.text = `Fetching jobs... (${++completed}/${projects.length} projects)`;
+        spinner.text = `Fetching jobs... (${String(++completed)}/${String(projects.length)} projects)`;
         const jobs = await client.fetchJobsInRange(project.id, startISO, onRetry);
         return { project, jobs };
-      })
-    )
+      }),
+    ),
   );
 
   // Aggregate
@@ -57,14 +58,14 @@ try {
   let grandTotalJobs = 0;
   let grandTotalSeconds = 0;
 
-  const projectStats = projectResults.map(({ project, jobs }) => {
+  const projectStats: ProjectStat[] = projectResults.map(({ project, jobs }) => {
     const totalJobs = jobs.length;
-    const totalDurationSeconds = jobs.reduce((sum, j) => sum + j.duration, 0);
+    const totalDurationSeconds = jobs.reduce((sum, j) => sum + (j.duration ?? 0), 0);
     const totalMinutes = round2(totalDurationSeconds / 60);
     const totalHours = round2(totalMinutes / 60);
     grandTotalJobs += totalJobs;
     grandTotalSeconds += totalDurationSeconds;
-    return { ...project, totalJobs, totalDurationSeconds, totalMinutes, totalHours };
+    return { ...project, totalJobs, totalDurationSeconds, totalMinutes, totalHours, percentOfTotal: 0 };
   });
 
   const grandTotalMinutes = round2(grandTotalSeconds / 60);
@@ -102,6 +103,6 @@ try {
   process.exit(0);
 } catch (err) {
   spinner.fail("Failed");
-  console.error(chalk.red(err.message));
+  console.error(chalk.red((err as Error).message));
   process.exit(1);
 }

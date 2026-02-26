@@ -1,20 +1,25 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createClient } from "../lib/gitlab.js";
 import { mockProjects, mockJobs, linkHeader, noLinkHeader } from "./fixtures/gitlab-api.js";
+import type { GitLabClient } from "../lib/types.js";
 
 const TOKEN = "glpat-test";
 const BASE_URL = "https://gitlab.example.com";
 const API = `${BASE_URL}/api/v4`;
 
-function jsonResponse(data, headers = {}) {
+function jsonResponse(data: unknown, headers: Record<string, string | null> = {}): Response {
+  const filteredHeaders: Record<string, string> = {};
+  for (const [k, v] of Object.entries(headers)) {
+    if (v != null) filteredHeaders[k] = v;
+  }
   return new Response(JSON.stringify(data), {
     status: 200,
-    headers: { "Content-Type": "application/json", ...headers },
+    headers: { "Content-Type": "application/json", ...filteredHeaders },
   });
 }
 
 describe("fetchProjects()", () => {
-  let client;
+  let client: GitLabClient;
 
   beforeEach(() => {
     client = createClient({ token: TOKEN, baseUrl: BASE_URL });
@@ -32,7 +37,7 @@ describe("fetchProjects()", () => {
     expect(result).toEqual([{ id: project.id, name: project.name, path_with_namespace: project.path_with_namespace }]);
     expect(globalThis.fetch).toHaveBeenCalledWith(
       `${API}/projects/42`,
-      expect.objectContaining({ headers: { "PRIVATE-TOKEN": TOKEN } })
+      expect.objectContaining({ headers: { "PRIVATE-TOKEN": TOKEN } }),
     );
   });
 
@@ -53,7 +58,7 @@ describe("fetchProjects()", () => {
 });
 
 describe("fetchJobsInRange()", () => {
-  let client;
+  let client: GitLabClient;
 
   beforeEach(() => {
     client = createClient({ token: TOKEN, baseUrl: BASE_URL });
@@ -65,36 +70,30 @@ describe("fetchJobsInRange()", () => {
 
   it("filters jobs by date", async () => {
     const startISO = "2025-06-10T00:00:00.000Z";
-    // Jobs from June 15 going backwards — 15, 14, 13, 12, 11, 10 (6 in range)
-    // Then 9, 8, 7, 6, 5, 4 (out of range)
     const jobs = mockJobs(12, { startDate: "2025-06-15T00:00:00Z" });
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      jsonResponse(jobs, noLinkHeader())
+      jsonResponse(jobs, noLinkHeader()),
     );
 
     const result = await client.fetchJobsInRange(1, startISO);
-    // Jobs with finished_at >= startISO: June 15, 14, 13, 12, 11, 10 = 6
     expect(result).toHaveLength(6);
     for (const job of result) {
-      expect(job.finished_at >= startISO).toBe(true);
+      expect(String(job.finished_at) >= startISO).toBe(true);
     }
   });
 
   it("early-stops on old data", async () => {
     const startISO = "2025-06-13T00:00:00.000Z";
-    // Page 1: jobs from June 15, 14, 13 (in range), then 12 (old → stop)
     const page1Jobs = mockJobs(4, { startDate: "2025-06-15T00:00:00Z" });
-    // Page 2 should never be fetched
     const page2Url = `${API}/projects/1/jobs?per_page=100&page=2`;
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      jsonResponse(page1Jobs, linkHeader(page2Url))
+      jsonResponse(page1Jobs, linkHeader(page2Url)),
     );
 
     const result = await client.fetchJobsInRange(1, startISO);
     expect(result).toHaveLength(3);
-    // Only 1 fetch call — page 2 was never requested
     expect(globalThis.fetch).toHaveBeenCalledTimes(1);
   });
 
@@ -107,7 +106,7 @@ describe("fetchJobsInRange()", () => {
     ];
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      jsonResponse(jobs, noLinkHeader())
+      jsonResponse(jobs, noLinkHeader()),
     );
 
     const result = await client.fetchJobsInRange(1, "2025-06-01T00:00:00.000Z");
@@ -139,7 +138,6 @@ describe("rate limiting", () => {
       .mockResolvedValueOnce(successResponse);
 
     const promise = client.fetchProjects("99", project.id, onRetry);
-    // Advance timers to resolve sleep(0)
     await vi.advanceTimersByTimeAsync(0);
     const result = await promise;
 
@@ -152,7 +150,7 @@ describe("rate limiting", () => {
     vi.useFakeTimers();
     const client = createClient({ token: TOKEN, baseUrl: BASE_URL });
 
-    const make429 = () => new Response("", {
+    const make429 = (): Response => new Response("", {
       status: 429,
       headers: { "Retry-After": "0" },
     });
@@ -163,12 +161,12 @@ describe("rate limiting", () => {
       .mockResolvedValueOnce(make429())
       .mockResolvedValueOnce(make429());
 
-    const promise = client.fetchProjects("99", 1).catch((e) => e);
+    const promise = client.fetchProjects("99", 1).catch((e: unknown) => e);
     await vi.runAllTimersAsync();
 
     const err = await promise;
     expect(err).toBeInstanceOf(Error);
-    expect(err.message).toMatch(/rate limit exceeded after 3 retries/);
+    expect((err as Error).message).toMatch(/rate limit exceeded after 3 retries/);
     expect(globalThis.fetch).toHaveBeenCalledTimes(4);
   });
 });
@@ -182,7 +180,7 @@ describe("error handling", () => {
     const client = createClient({ token: TOKEN, baseUrl: BASE_URL });
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("Internal Server Error", { status: 500, statusText: "Internal Server Error" })
+      new Response("Internal Server Error", { status: 500, statusText: "Internal Server Error" }),
     );
 
     await expect(client.fetchProjects("99", 1)).rejects.toThrow(/GitLab API error.*500/);

@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { buildMarkdownReport, printCLIReport } from "../lib/report.js";
+import type { Summary } from "../lib/types.js";
 
-function makeSummary(overrides = {}) {
+function makeSummary(overrides: Partial<Summary> = {}): Summary {
   return {
     generatedAt: "2025-06-15 12:00:00",
     dateRangeStart: "2025-05-16",
@@ -14,9 +15,9 @@ function makeSummary(overrides = {}) {
     grandTotalMinutes: 12345,
     grandTotalHours: 205,
     projectStats: [
-      { path_with_namespace: "group/project-1", totalJobs: 800, totalMinutes: 7000, totalHours: 116, percentOfTotal: 56.7 },
-      { path_with_namespace: "group/project-2", totalJobs: 500, totalMinutes: 3345, totalHours: 55, percentOfTotal: 27.1 },
-      { path_with_namespace: "group/project-3", totalJobs: 200, totalMinutes: 2000, totalHours: 33, percentOfTotal: 16.2 },
+      { id: 1, name: "project-1", path_with_namespace: "group/project-1", totalJobs: 800, totalDurationSeconds: 420000, totalMinutes: 7000, totalHours: 116, percentOfTotal: 56.7 },
+      { id: 2, name: "project-2", path_with_namespace: "group/project-2", totalJobs: 500, totalDurationSeconds: 200700, totalMinutes: 3345, totalHours: 55, percentOfTotal: 27.1 },
+      { id: 3, name: "project-3", path_with_namespace: "group/project-3", totalJobs: 200, totalDurationSeconds: 120000, totalMinutes: 2000, totalHours: 33, percentOfTotal: 16.2 },
     ],
     ...overrides,
   };
@@ -40,7 +41,7 @@ describe("buildMarkdownReport()", () => {
 
     for (const p of summary.projectStats) {
       expect(md).toContain(p.path_with_namespace);
-      expect(md).toContain(`${p.percentOfTotal}%`);
+      expect(md).toContain(`${String(p.percentOfTotal)}%`);
     }
   });
 

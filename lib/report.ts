@@ -1,8 +1,9 @@
 import chalk from "chalk";
+import type { Summary } from "./types.js";
 
-const fmt = (n) => n.toLocaleString("en-US");
+const fmt = (n: number): string => n.toLocaleString("en-US");
 
-export function printCLIReport(summary) {
+export function printCLIReport(summary: Summary): void {
   const { dateRangeStart, dateRangeEnd, generatedAt, projectCount, grandTotalJobs, grandTotalMinutes, grandTotalHours, projectStats } = summary;
 
   console.log("");
@@ -23,24 +24,24 @@ export function printCLIReport(summary) {
         `${chalk.bold.green(fmt(p.totalJobs))} jobs · ` +
         `${chalk.bold.green(fmt(p.totalMinutes))} min · ` +
         `${chalk.bold.green(fmt(p.totalHours))} hrs · ` +
-        `${chalk.yellow(p.percentOfTotal + "%")}`
+        chalk.yellow(String(p.percentOfTotal) + "%"),
     );
   }
 
   console.log("");
 }
 
-export function buildMarkdownReport(summary) {
+export function buildMarkdownReport(summary: Summary): string {
   const { generatedAt, dateRangeStart, dateRangeEnd, days, baseUrl, groupId, projectCount, grandTotalJobs, grandTotalMinutes, grandTotalHours, projectStats } = summary;
 
-  const lines = [
+  const lines: string[] = [
     "# GitLab CI Usage Report",
     "",
     "## Metadata",
     "",
     `- **Generated At:** ${generatedAt}`,
     `- **Date Range:** ${dateRangeStart} → ${dateRangeEnd}`,
-    `- **Days Analyzed:** ${days}`,
+    `- **Days Analyzed:** ${String(days)}`,
     `- **GitLab Base URL:** ${baseUrl}`,
     `- **Group ID:** ${groupId}`,
     `- **Projects Analyzed:** ${fmt(projectCount)}`,
@@ -65,7 +66,7 @@ export function buildMarkdownReport(summary) {
 
   for (const p of projectStats) {
     lines.push(
-      `| ${p.path_with_namespace} | ${fmt(p.totalJobs)} | ${fmt(p.totalMinutes)} | ${fmt(p.totalHours)} | ${p.percentOfTotal}% |`
+      `| ${p.path_with_namespace} | ${fmt(p.totalJobs)} | ${fmt(p.totalMinutes)} | ${fmt(p.totalHours)} | ${String(p.percentOfTotal)}% |`,
     );
   }
 
@@ -74,7 +75,7 @@ export function buildMarkdownReport(summary) {
     "## Notes",
     "",
     "*CI minutes are calculated as the sum of job durations within the selected window.*",
-    ""
+    "",
   );
 
   return lines.join("\n");
