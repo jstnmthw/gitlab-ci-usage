@@ -60,7 +60,7 @@ export function createClient(config: Pick<Config, "token" | "baseUrl">): GitLabC
   const { token, baseUrl } = config;
   const apiBase = `${baseUrl}/api/v4`;
 
-  async function fetchProjects(groupId: string, projectId: number | undefined, onRetry?: OnRetry): Promise<GitLabProject[]> {
+  async function fetchProjects(groupId: string | undefined, projectId: number | undefined, onRetry?: OnRetry): Promise<GitLabProject[]> {
     if (projectId) {
       const res = await gitlabFetch(`${apiBase}/projects/${String(projectId)}`, token, onRetry);
       const p = (await res.json()) as GitLabProject;

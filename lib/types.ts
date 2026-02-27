@@ -4,7 +4,7 @@ export interface Config {
 }
 
 export interface ParsedArgs {
-  groupId: string;
+  groupId: string | undefined;
   days: number;
   project: number | undefined;
   output: string;
@@ -41,7 +41,7 @@ export interface Summary {
   dateRangeEnd: string;
   days: number;
   baseUrl: string;
-  groupId: string;
+  groupId: string | undefined;
   projectCount: number;
   grandTotalJobs: number;
   grandTotalMinutes: number;
@@ -52,6 +52,6 @@ export interface Summary {
 export type OnRetry = (msg: string) => void;
 
 export interface GitLabClient {
-  fetchProjects(groupId: string, projectId: number | undefined, onRetry?: OnRetry): Promise<GitLabProject[]>;
+  fetchProjects(groupId: string | undefined, projectId: number | undefined, onRetry?: OnRetry): Promise<GitLabProject[]>;
   fetchJobsInRange(projectId: number, startISO: string, onRetry?: OnRetry): Promise<GitLabJob[]>;
 }

@@ -30,20 +30,23 @@ export function parseArgs(): ParsedArgs {
   program
     .name("gitlab-ci-usage")
     .description("Calculate total GitLab CI job runtime across all projects in a group")
-    .argument("<group-id>", "numeric ID of the GitLab group to analyze")
+    .argument("[group-id]", "numeric ID of the GitLab group to analyze (optional with --project)")
     .option("--days <number>", "number of days to look back", "30")
     .option("--project <id>", "restrict to a single project ID")
     .option("--output <filename>", "report filename", "report.md")
     .option("--mock", "generate a report with mock data (no GitLab credentials needed)")
     .parse();
 
-  const groupId = program.args[0];
-  if (!/^\d+$/.test(groupId)) {
+  const opts = program.opts<{ days: string; project?: string; output: string; mock?: boolean }>();
+  const groupId = program.args[0] as string | undefined;
+  if (!groupId && !opts.project) {
+    console.error(chalk.red("<group-id> is required unless --project is provided"));
+    process.exit(1);
+  }
+  if (groupId && !/^\d+$/.test(groupId)) {
     console.error(chalk.red("<group-id> must be a numeric ID"));
     process.exit(1);
   }
-
-  const opts = program.opts<{ days: string; project?: string; output: string; mock?: boolean }>();
 
   const days = parseInt(opts.days, 10);
   if (!Number.isInteger(days) || days <= 0) {
