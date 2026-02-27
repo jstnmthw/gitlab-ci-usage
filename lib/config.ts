@@ -38,10 +38,10 @@ export function parseArgs(): ParsedArgs {
     .option("--days <number>", "number of days to look back", "30")
     .option("--project <id>", "restrict to a single project ID")
     .option("--output <filename>", "report filename", "report.md")
-    .option("--dry-run", "use mock data instead of calling the GitLab API")
+    .option("--mock", "generate a report with mock data (no GitLab credentials needed)")
     .parse();
 
-  const opts = program.opts<{ days: string; project?: string; output: string; dryRun?: boolean }>();
+  const opts = program.opts<{ days: string; project?: string; output: string; mock?: boolean }>();
 
   const days = parseInt(opts.days, 10);
   if (!Number.isInteger(days) || days <= 0) {
@@ -62,5 +62,5 @@ export function parseArgs(): ParsedArgs {
   const endDate = new Date();
   const startDate = subDays(endDate, days);
 
-  return { days, project, output: opts.output, startDate, endDate, dryRun: opts.dryRun === true };
+  return { days, project, output: opts.output, startDate, endDate, mock: opts.mock === true };
 }

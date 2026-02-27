@@ -20,8 +20,8 @@ const args = parseArgs();
 let config: Config;
 let client: GitLabClient;
 
-if (args.dryRun) {
-  console.log(chalk.yellow("Dry-run mode — using mock data, no API calls will be made.\n"));
+if (args.mock) {
+  console.log(chalk.yellow("Mock mode — using mock data, no API calls will be made.\n"));
   config = { token: "mock", baseUrl: "https://gitlab.example.com", groupId: "1" };
   client = createMockClient(args.startDate);
 } else {

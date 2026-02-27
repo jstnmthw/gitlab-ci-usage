@@ -33,8 +33,8 @@ pnpm start --project 12345
 pnpm start --output report.md
 
 # Preview with mock data (no GitLab credentials needed)
-pnpm start --dry-run
-pnpm start --dry-run --days 7 --output preview.md
+pnpm start --mock
+pnpm start --mock --days 7 --output preview.md
 ```
 
 ## CLI Options
@@ -44,17 +44,24 @@ pnpm start --dry-run --days 7 --output preview.md
 | `--days <number>` | Number of days to look back | `30` |
 | `--project <id>` | Restrict to a single project | — |
 | `--output <filename>` | Report filename | `report.md` |
-| `--dry-run` | Use mock data instead of calling the GitLab API | — |
+| `--mock` | Generate a report with mock data (no GitLab credentials needed) | — |
 
 ## Environment Variables
 
-Configured via a `.env` file or exported in your shell. The tool reads `.env` automatically but will not overwrite variables already set in the environment.
+All three variables are required. Define them in a `.env` file at the project root (copy `.env.example` to get started) or export them in your shell. The tool reads `.env` automatically but will not overwrite variables already set in the environment.
+
+```bash
+# .env
+GITLAB_TOKEN=glpat-xxxxxxxxxxxxxxxxxxxx
+GITLAB_BASE_URL=https://gitlab.com
+GITLAB_GROUP_ID=12345
+```
 
 | Variable | Required | Description |
 | -------- | -------- | ----------- |
-| `GITLAB_TOKEN` | Yes | GitLab personal access token |
-| `GITLAB_BASE_URL` | Yes | GitLab instance URL (e.g. `https://gitlab.com`) |
-| `GITLAB_GROUP_ID` | Yes | Numeric ID of the group to analyze |
+| `GITLAB_TOKEN` | Yes | GitLab personal access token (see [GitLab Token Scopes](#gitlab-token-scopes)) |
+| `GITLAB_BASE_URL` | Yes | `https://gitlab.com` for GitLab.com, or your self-hosted instance URL (e.g. `https://gitlab.example.com`) |
+| `GITLAB_GROUP_ID` | Yes | Numeric ID of the group to analyze (found on the group's **Settings → General** page) |
 
 ## GitLab Token Scopes
 
@@ -87,7 +94,7 @@ Rate-limited responses (HTTP 429) are automatically retried after the `Retry-Aft
 │   ├── types.ts           # Shared type definitions
 │   ├── config.ts          # env validation, CLI arg parsing
 │   ├── gitlab.ts          # GitLab API client (pagination, rate-limit retry)
-│   ├── mock-client.ts     # Mock GitLab client for --dry-run mode
+│   ├── mock-client.ts     # Mock GitLab client for --mock mode
 │   └── report.ts          # CLI and Markdown report generation
 ├── test/
 │   ├── fixtures/
