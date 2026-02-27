@@ -41,13 +41,13 @@ pnpm start 12345 --mock --days 7 --output preview.md
 
 Usage: `pnpm start <group-id> [options]`
 
-| Argument / Option | Description | Default |
-| ----------------- | ----------- | ------- |
-| `<group-id>` | Numeric ID of the GitLab group to analyze (required) | — |
-| `--days <number>` | Number of days to look back | `30` |
-| `--project <id>` | Restrict to a single project | — |
-| `--output <filename>` | Report filename | `report.md` |
-| `--mock` | Generate a report with mock data (no GitLab credentials needed) | — |
+| Argument / Option     | Description                                                     | Default     |
+| --------------------- | --------------------------------------------------------------- | ----------- |
+| `<group-id>`          | Numeric ID of the GitLab group to analyze (required)            | —           |
+| `--days <number>`     | Number of days to look back                                     | `30`        |
+| `--project <id>`      | Restrict to a single project                                    | —           |
+| `--output <filename>` | Report filename                                                 | `report.md` |
+| `--mock`              | Generate a report with mock data (no GitLab credentials needed) | —           |
 
 ## Environment Variables
 
@@ -59,10 +59,10 @@ GITLAB_TOKEN=glpat-xxxxxxxxxxxxxxxxxxxx
 GITLAB_BASE_URL=https://gitlab.com
 ```
 
-| Variable | Required | Description |
-| -------- | -------- | ----------- |
-| `GITLAB_TOKEN` | Yes | GitLab personal access token (see [GitLab Token Scopes](#gitlab-token-scopes)) |
-| `GITLAB_BASE_URL` | Yes | `https://gitlab.com` for GitLab.com, or your self-hosted instance URL (e.g. `https://gitlab.example.com`) |
+| Variable          | Required | Description                                                                                               |
+| ----------------- | -------- | --------------------------------------------------------------------------------------------------------- |
+| `GITLAB_TOKEN`    | Yes      | GitLab personal access token (see [GitLab Token Scopes](#gitlab-token-scopes))                            |
+| `GITLAB_BASE_URL` | Yes      | `https://gitlab.com` for GitLab.com, or your self-hosted instance URL (e.g. `https://gitlab.example.com`) |
 
 ## GitLab Token Scopes
 
@@ -131,8 +131,8 @@ pnpm vitest
 
 ### Coverage
 
-| Module | What's tested |
-| ------ | ------------- |
-| `lib/config.ts` | env validation, missing var exits, trailing slash stripping |
+| Module          | What's tested                                                                                                                            |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `lib/config.ts` | env validation, missing var exits, trailing slash stripping                                                                              |
 | `lib/gitlab.ts` | Single-project fetch, paginated group fetch, date filtering, early-stop on old data, incomplete job filtering, 429 retry, error throwing |
-| `lib/report.ts` | Markdown structure and sections, table row correctness, locale number formatting, CLI stdout output |
+| `lib/report.ts` | Markdown structure and sections, table row correctness, locale number formatting, CLI stdout output                                      |

@@ -52,6 +52,14 @@ export interface Summary {
 export type OnRetry = (msg: string) => void;
 
 export interface GitLabClient {
-  fetchProjects(groupId: string | undefined, projectId: number | undefined, onRetry?: OnRetry): Promise<GitLabProject[]>;
-  fetchJobsInRange(projectId: number, startISO: string, onRetry?: OnRetry): Promise<GitLabJob[]>;
+  fetchProjects(
+    groupId: string | undefined,
+    projectId: number | undefined,
+    onRetry?: OnRetry,
+  ): Promise<GitLabProject[]>;
+  fetchJobsInRange(
+    projectId: number,
+    startISO: string,
+    onRetry?: OnRetry,
+  ): Promise<GitLabJob[]>;
 }

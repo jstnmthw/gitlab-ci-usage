@@ -15,9 +15,36 @@ function makeSummary(overrides: Partial<Summary> = {}): Summary {
     grandTotalMinutes: 12345,
     grandTotalHours: 205,
     projectStats: [
-      { id: 1, name: "project-1", path_with_namespace: "group/project-1", totalJobs: 800, totalDurationSeconds: 420000, totalMinutes: 7000, totalHours: 116, percentOfTotal: 56.7 },
-      { id: 2, name: "project-2", path_with_namespace: "group/project-2", totalJobs: 500, totalDurationSeconds: 200700, totalMinutes: 3345, totalHours: 55, percentOfTotal: 27.1 },
-      { id: 3, name: "project-3", path_with_namespace: "group/project-3", totalJobs: 200, totalDurationSeconds: 120000, totalMinutes: 2000, totalHours: 33, percentOfTotal: 16.2 },
+      {
+        id: 1,
+        name: "project-1",
+        path_with_namespace: "group/project-1",
+        totalJobs: 800,
+        totalDurationSeconds: 420000,
+        totalMinutes: 7000,
+        totalHours: 116,
+        percentOfTotal: 56.7,
+      },
+      {
+        id: 2,
+        name: "project-2",
+        path_with_namespace: "group/project-2",
+        totalJobs: 500,
+        totalDurationSeconds: 200700,
+        totalMinutes: 3345,
+        totalHours: 55,
+        percentOfTotal: 27.1,
+      },
+      {
+        id: 3,
+        name: "project-3",
+        path_with_namespace: "group/project-3",
+        totalJobs: 200,
+        totalDurationSeconds: 120000,
+        totalMinutes: 2000,
+        totalHours: 33,
+        percentOfTotal: 16.2,
+      },
     ],
     ...overrides,
   };
@@ -46,7 +73,10 @@ describe("buildMarkdownReport()", () => {
   });
 
   it("formats numbers with locale separators", () => {
-    const summary = makeSummary({ grandTotalJobs: 1500, grandTotalMinutes: 12345 });
+    const summary = makeSummary({
+      grandTotalJobs: 1500,
+      grandTotalMinutes: 12345,
+    });
     const md = buildMarkdownReport(summary);
 
     expect(md).toContain("1,500");

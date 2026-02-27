@@ -4,16 +4,35 @@ import type { Summary } from "./types.js";
 const fmt = (n: number): string => n.toLocaleString("en-US");
 
 export function printCLIReport(summary: Summary): void {
-  const { dateRangeStart, dateRangeEnd, generatedAt, projectCount, grandTotalJobs, grandTotalMinutes, grandTotalHours, projectStats } = summary;
+  const {
+    dateRangeStart,
+    dateRangeEnd,
+    generatedAt,
+    projectCount,
+    grandTotalJobs,
+    grandTotalMinutes,
+    grandTotalHours,
+    projectStats,
+  } = summary;
 
   console.log("");
   console.log(chalk.cyan("── GitLab CI Usage Report ──────────────────"));
-  console.log(`${chalk.cyan("Date Range:")}        ${dateRangeStart} → ${dateRangeEnd}`);
+  console.log(
+    `${chalk.cyan("Date Range:")}        ${dateRangeStart} → ${dateRangeEnd}`,
+  );
   console.log(`${chalk.cyan("Generated At:")}      ${generatedAt}`);
-  console.log(`${chalk.cyan("Projects Analyzed:")} ${chalk.bold.green(fmt(projectCount))}`);
-  console.log(`${chalk.cyan("Total Jobs:")}        ${chalk.bold.green(fmt(grandTotalJobs))}`);
-  console.log(`${chalk.cyan("Total CI Minutes:")}  ${chalk.bold.green(fmt(grandTotalMinutes))}`);
-  console.log(`${chalk.cyan("Total CI Hours:")}    ${chalk.bold.green(fmt(grandTotalHours))}`);
+  console.log(
+    `${chalk.cyan("Projects Analyzed:")} ${chalk.bold.green(fmt(projectCount))}`,
+  );
+  console.log(
+    `${chalk.cyan("Total Jobs:")}        ${chalk.bold.green(fmt(grandTotalJobs))}`,
+  );
+  console.log(
+    `${chalk.cyan("Total CI Minutes:")}  ${chalk.bold.green(fmt(grandTotalMinutes))}`,
+  );
+  console.log(
+    `${chalk.cyan("Total CI Hours:")}    ${chalk.bold.green(fmt(grandTotalHours))}`,
+  );
   console.log(chalk.cyan("─────────────────────────────────────────────"));
   console.log("");
 
@@ -32,7 +51,19 @@ export function printCLIReport(summary: Summary): void {
 }
 
 export function buildMarkdownReport(summary: Summary): string {
-  const { generatedAt, dateRangeStart, dateRangeEnd, days, baseUrl, groupId, projectCount, grandTotalJobs, grandTotalMinutes, grandTotalHours, projectStats } = summary;
+  const {
+    generatedAt,
+    dateRangeStart,
+    dateRangeEnd,
+    days,
+    baseUrl,
+    groupId,
+    projectCount,
+    grandTotalJobs,
+    grandTotalMinutes,
+    grandTotalHours,
+    projectStats,
+  } = summary;
 
   const lines: string[] = [
     "# GitLab CI Usage Report",
@@ -43,7 +74,7 @@ export function buildMarkdownReport(summary: Summary): string {
     `- **Date Range:** ${dateRangeStart} → ${dateRangeEnd}`,
     `- **Days Analyzed:** ${String(days)}`,
     `- **GitLab Base URL:** ${baseUrl}`,
-    `- **Group ID:** ${groupId}`,
+    `- **Group ID:** ${groupId ?? "N/A"}`,
     `- **Projects Analyzed:** ${fmt(projectCount)}`,
     `- **Total Jobs:** ${fmt(grandTotalJobs)}`,
     `- **Total CI Minutes:** ${fmt(grandTotalMinutes)}`,

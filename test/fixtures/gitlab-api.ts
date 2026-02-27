@@ -12,8 +12,13 @@ export function mockProjects(n: number): GitLabProject[] {
   }));
 }
 
-export function mockJobs(n: number, { startDate }: { startDate?: string } = {}): GitLabJob[] {
-  const base = startDate ? new Date(startDate) : new Date("2025-06-15T00:00:00Z");
+export function mockJobs(
+  n: number,
+  { startDate }: { startDate?: string } = {},
+): GitLabJob[] {
+  const base = startDate
+    ? new Date(startDate)
+    : new Date("2025-06-15T00:00:00Z");
   return Array.from({ length: n }, (_, i) => ({
     id: 1000 + i,
     name: `job-${String(i)}`,

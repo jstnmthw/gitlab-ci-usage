@@ -1,13 +1,21 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createClient } from "../lib/gitlab.js";
-import { mockProjects, mockJobs, linkHeader, noLinkHeader } from "./fixtures/gitlab-api.js";
+import {
+  mockProjects,
+  mockJobs,
+  linkHeader,
+  noLinkHeader,
+} from "./fixtures/gitlab-api.js";
 import type { GitLabClient } from "../lib/types.js";
 
 const TOKEN = "glpat-test";
 const BASE_URL = "https://gitlab.example.com";
 const API = `${BASE_URL}/api/v4`;
 
-function jsonResponse(data: unknown, headers: Record<string, string | null> = {}): Response {
+function jsonResponse(
+  data: unknown,
+  headers: Record<string, string | null> = {},
+): Response {
   const filteredHeaders: Record<string, string> = {};
   for (const [k, v] of Object.entries(headers)) {
     if (v != null) filteredHeaders[k] = v;
@@ -34,7 +42,13 @@ describe("fetchProjects()", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(jsonResponse(project));
 
     const result = await client.fetchProjects("99", 42);
-    expect(result).toEqual([{ id: project.id, name: project.name, path_with_namespace: project.path_with_namespace }]);
+    expect(result).toEqual([
+      {
+        id: project.id,
+        name: project.name,
+        path_with_namespace: project.path_with_namespace,
+      },
+    ]);
     expect(globalThis.fetch).toHaveBeenCalledWith(
       `${API}/projects/42`,
       expect.objectContaining({ headers: { "PRIVATE-TOKEN": TOKEN } }),
@@ -99,10 +113,34 @@ describe("fetchJobsInRange()", () => {
 
   it("skips jobs with null finished_at/duration/status", async () => {
     const jobs = [
-      { id: 1, name: "good", finished_at: "2025-06-15T00:00:00.000Z", duration: 60, status: "success" },
-      { id: 2, name: "no-finish", finished_at: null, duration: 60, status: "success" },
-      { id: 3, name: "no-duration", finished_at: "2025-06-15T00:00:00.000Z", duration: null, status: "success" },
-      { id: 4, name: "no-status", finished_at: "2025-06-15T00:00:00.000Z", duration: 60, status: null },
+      {
+        id: 1,
+        name: "good",
+        finished_at: "2025-06-15T00:00:00.000Z",
+        duration: 60,
+        status: "success",
+      },
+      {
+        id: 2,
+        name: "no-finish",
+        finished_at: null,
+        duration: 60,
+        status: "success",
+      },
+      {
+        id: 3,
+        name: "no-duration",
+        finished_at: "2025-06-15T00:00:00.000Z",
+        duration: null,
+        status: "success",
+      },
+      {
+        id: 4,
+        name: "no-status",
+        finished_at: "2025-06-15T00:00:00.000Z",
+        duration: 60,
+        status: null,
+      },
     ];
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
@@ -141,7 +179,9 @@ describe("rate limiting", () => {
     await vi.advanceTimersByTimeAsync(0);
     const result = await promise;
 
-    expect(onRetry).toHaveBeenCalledWith(expect.stringContaining("Rate limited"));
+    expect(onRetry).toHaveBeenCalledWith(
+      expect.stringContaining("Rate limited"),
+    );
     expect(result).toHaveLength(1);
     expect(globalThis.fetch).toHaveBeenCalledTimes(2);
   });
@@ -150,10 +190,11 @@ describe("rate limiting", () => {
     vi.useFakeTimers();
     const client = createClient({ token: TOKEN, baseUrl: BASE_URL });
 
-    const make429 = (): Response => new Response("", {
-      status: 429,
-      headers: { "Retry-After": "0" },
-    });
+    const make429 = (): Response =>
+      new Response("", {
+        status: 429,
+        headers: { "Retry-After": "0" },
+      });
 
     vi.spyOn(globalThis, "fetch")
       .mockResolvedValueOnce(make429())
@@ -166,7 +207,9 @@ describe("rate limiting", () => {
 
     const err = await promise;
     expect(err).toBeInstanceOf(Error);
-    expect((err as Error).message).toMatch(/rate limit exceeded after 3 retries/);
+    expect((err as Error).message).toMatch(
+      /rate limit exceeded after 3 retries/,
+    );
     expect(globalThis.fetch).toHaveBeenCalledTimes(4);
   });
 });
@@ -180,9 +223,14 @@ describe("error handling", () => {
     const client = createClient({ token: TOKEN, baseUrl: BASE_URL });
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("Internal Server Error", { status: 500, statusText: "Internal Server Error" }),
+      new Response("Internal Server Error", {
+        status: 500,
+        statusText: "Internal Server Error",
+      }),
     );
 
-    await expect(client.fetchProjects("99", 1)).rejects.toThrow(/GitLab API error.*500/);
+    await expect(client.fetchProjects("99", 1)).rejects.toThrow(
+      /GitLab API error.*500/,
+    );
   });
 });

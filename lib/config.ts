@@ -7,7 +7,9 @@ function requireEnv(name: string): string {
   const value = process.env[name];
   if (!value) {
     console.error(chalk.red(`Missing required environment variable: ${name}`));
-    console.error(chalk.red("Copy .env.example to .env and fill in your values."));
+    console.error(
+      chalk.red("Copy .env.example to .env and fill in your values."),
+    );
     process.exit(1);
   }
   return value;
@@ -18,7 +20,11 @@ export function validateEnv(): Config {
   const baseUrl = requireEnv("GITLAB_BASE_URL").replace(/\/+$/, "");
 
   if (!baseUrl.startsWith("https://")) {
-    console.error(chalk.red("GITLAB_BASE_URL must use HTTPS to protect your token in transit."));
+    console.error(
+      chalk.red(
+        "GITLAB_BASE_URL must use HTTPS to protect your token in transit.",
+      ),
+    );
     process.exit(1);
   }
 
@@ -29,18 +35,33 @@ export function parseArgs(): ParsedArgs {
   const program = new Command();
   program
     .name("gitlab-ci-usage")
-    .description("Calculate total GitLab CI job runtime across all projects in a group")
-    .argument("[group-id]", "numeric ID of the GitLab group to analyze (optional with --project)")
+    .description(
+      "Calculate total GitLab CI job runtime across all projects in a group",
+    )
+    .argument(
+      "[group-id]",
+      "numeric ID of the GitLab group to analyze (optional with --project)",
+    )
     .option("--days <number>", "number of days to look back", "30")
     .option("--project <id>", "restrict to a single project ID")
     .option("--output <filename>", "report filename", "report.md")
-    .option("--mock", "generate a report with mock data (no GitLab credentials needed)")
+    .option(
+      "--mock",
+      "generate a report with mock data (no GitLab credentials needed)",
+    )
     .parse();
 
-  const opts = program.opts<{ days: string; project?: string; output: string; mock?: boolean }>();
+  const opts = program.opts<{
+    days: string;
+    project?: string;
+    output: string;
+    mock?: boolean;
+  }>();
   const groupId = program.args[0] as string | undefined;
   if (!groupId && !opts.project) {
-    console.error(chalk.red("<group-id> is required unless --project is provided"));
+    console.error(
+      chalk.red("<group-id> is required unless --project is provided"),
+    );
     process.exit(1);
   }
   if (groupId && !/^\d+$/.test(groupId)) {
@@ -67,5 +88,13 @@ export function parseArgs(): ParsedArgs {
   const endDate = new Date();
   const startDate = subDays(endDate, days);
 
-  return { groupId, days, project, output: opts.output, startDate, endDate, mock: opts.mock === true };
+  return {
+    groupId,
+    days,
+    project,
+    output: opts.output,
+    startDate,
+    endDate,
+    mock: opts.mock === true,
+  };
 }
