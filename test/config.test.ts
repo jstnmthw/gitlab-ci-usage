@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-import { validateEnv } from "../lib/config.js";
+import { validateEnv, parseArgs } from "../lib/config.js";
 
 describe("validateEnv()", () => {
   const savedEnv: Record<string, string | undefined> = {};
 
   beforeEach(() => {
-    for (const key of ["GITLAB_TOKEN", "GITLAB_BASE_URL", "GITLAB_GROUP_ID"]) {
+    for (const key of ["GITLAB_TOKEN", "GITLAB_BASE_URL"]) {
       savedEnv[key] = process.env[key];
       Reflect.deleteProperty(process.env, key);
     }
@@ -22,13 +22,11 @@ describe("validateEnv()", () => {
   it("returns config when all vars are set", () => {
     process.env.GITLAB_TOKEN = "glpat-abc123";
     process.env.GITLAB_BASE_URL = "https://gitlab.example.com";
-    process.env.GITLAB_GROUP_ID = "42";
 
     const config = validateEnv();
     expect(config).toEqual({
       token: "glpat-abc123",
       baseUrl: "https://gitlab.example.com",
-      groupId: "42",
     });
   });
 
@@ -39,7 +37,7 @@ describe("validateEnv()", () => {
     const mockError = vi.spyOn(console, "error").mockImplementation(() => {});
 
     process.env.GITLAB_TOKEN = "glpat-abc123";
-    // Missing GITLAB_BASE_URL and GITLAB_GROUP_ID
+    // Missing GITLAB_BASE_URL
 
     expect(() => validateEnv()).toThrow("process.exit called");
     expect(mockExit).toHaveBeenCalledWith(1);
@@ -51,7 +49,6 @@ describe("validateEnv()", () => {
   it("strips trailing slashes from base URL", () => {
     process.env.GITLAB_TOKEN = "glpat-abc123";
     process.env.GITLAB_BASE_URL = "https://gitlab.example.com///";
-    process.env.GITLAB_GROUP_ID = "42";
 
     const config = validateEnv();
     expect(config.baseUrl).toBe("https://gitlab.example.com");
@@ -65,10 +62,37 @@ describe("validateEnv()", () => {
 
     process.env.GITLAB_TOKEN = "glpat-abc123";
     process.env.GITLAB_BASE_URL = "http://gitlab.example.com";
-    process.env.GITLAB_GROUP_ID = "42";
 
     expect(() => validateEnv()).toThrow("process.exit called");
     expect(mockExit).toHaveBeenCalledWith(1);
+
+    mockError.mockRestore();
+    mockExit.mockRestore();
+  });
+});
+
+describe("parseArgs()", () => {
+  const originalArgv = process.argv;
+
+  afterEach(() => {
+    process.argv = originalArgv;
+  });
+
+  it("parses a valid numeric group ID", () => {
+    process.argv = ["node", "index.ts", "42"];
+    const args = parseArgs();
+    expect(args.groupId).toBe("42");
+  });
+
+  it("exits when group ID is missing", () => {
+    const mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
+      throw new Error("process.exit called");
+    });
+    const mockError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    process.argv = ["node", "index.ts"];
+
+    expect(() => parseArgs()).toThrow("process.exit called");
 
     mockError.mockRestore();
     mockExit.mockRestore();
@@ -80,11 +104,9 @@ describe("validateEnv()", () => {
     });
     const mockError = vi.spyOn(console, "error").mockImplementation(() => {});
 
-    process.env.GITLAB_TOKEN = "glpat-abc123";
-    process.env.GITLAB_BASE_URL = "https://gitlab.example.com";
-    process.env.GITLAB_GROUP_ID = "not-a-number";
+    process.argv = ["node", "index.ts", "not-a-number"];
 
-    expect(() => validateEnv()).toThrow("process.exit called");
+    expect(() => parseArgs()).toThrow("process.exit called");
     expect(mockExit).toHaveBeenCalledWith(1);
 
     mockError.mockRestore();

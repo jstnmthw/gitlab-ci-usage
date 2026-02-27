@@ -14,33 +14,36 @@ Lightweight CLI tool that calculates total GitLab CI job runtime across all proj
 ```bash
 pnpm install
 cp .env.example .env
-# Edit .env with your GitLab token, base URL, and group ID
+# Edit .env with your GitLab token and base URL
 ```
 
 ## Usage
 
 ```bash
 # Analyze the last 30 days (default)
-pnpm start
+pnpm start 12345
 
 # Look back 90 days
-pnpm start --days 90
+pnpm start 12345 --days 90
 
 # Restrict to a single project
-pnpm start --project 12345
+pnpm start 12345 --project 67890
 
 # Custom output filename
-pnpm start --output report.md
+pnpm start 12345 --output report.md
 
 # Preview with mock data (no GitLab credentials needed)
-pnpm start --mock
-pnpm start --mock --days 7 --output preview.md
+pnpm start 12345 --mock
+pnpm start 12345 --mock --days 7 --output preview.md
 ```
 
 ## CLI Options
 
-| Option | Description | Default |
-| ------ | ----------- | ------- |
+Usage: `pnpm start <group-id> [options]`
+
+| Argument / Option | Description | Default |
+| ----------------- | ----------- | ------- |
+| `<group-id>` | Numeric ID of the GitLab group to analyze (required) | — |
 | `--days <number>` | Number of days to look back | `30` |
 | `--project <id>` | Restrict to a single project | — |
 | `--output <filename>` | Report filename | `report.md` |
@@ -48,20 +51,18 @@ pnpm start --mock --days 7 --output preview.md
 
 ## Environment Variables
 
-All three variables are required. Define them in a `.env` file at the project root (copy `.env.example` to get started) or export them in your shell. The tool reads `.env` automatically but will not overwrite variables already set in the environment.
+Both variables are required. Define them in a `.env` file at the project root (copy `.env.example` to get started) or export them in your shell. The tool reads `.env` automatically but will not overwrite variables already set in the environment.
 
 ```bash
 # .env
 GITLAB_TOKEN=glpat-xxxxxxxxxxxxxxxxxxxx
 GITLAB_BASE_URL=https://gitlab.com
-GITLAB_GROUP_ID=12345
 ```
 
 | Variable | Required | Description |
 | -------- | -------- | ----------- |
 | `GITLAB_TOKEN` | Yes | GitLab personal access token (see [GitLab Token Scopes](#gitlab-token-scopes)) |
 | `GITLAB_BASE_URL` | Yes | `https://gitlab.com` for GitLab.com, or your self-hosted instance URL (e.g. `https://gitlab.example.com`) |
-| `GITLAB_GROUP_ID` | Yes | Numeric ID of the group to analyze (found on the group's **Settings → General** page) |
 
 ## GitLab Token Scopes
 
@@ -78,7 +79,7 @@ The tool produces:
 
 ## How It Works
 
-1. Loads configuration from `.env` and CLI arguments.
+1. Loads credentials from `.env` and the target group ID and options from CLI arguments.
 2. Fetches all projects in the specified group (including subgroups) via the GitLab API, or a single project if `--project` is provided.
 3. Fetches CI jobs for each project concurrently (up to 5 at a time), filtering to the configured date range. Pagination stops early when it encounters jobs older than the start date.
 4. Aggregates durations and computes per-project and total minutes/hours.

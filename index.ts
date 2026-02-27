@@ -10,22 +10,23 @@ import { validateEnv, parseArgs } from "./lib/config.js";
 import { createClient } from "./lib/gitlab.js";
 import { createMockClient } from "./lib/mock-client.js";
 import { printCLIReport, buildMarkdownReport } from "./lib/report.js";
-import type { Config, GitLabClient, ProjectStat } from "./lib/types.js";
+import type { GitLabClient, ProjectStat } from "./lib/types.js";
 
 // ── Configuration ────────────────────────────────────────────────────
 
 try { process.loadEnvFile(); } catch { /* no .env file — rely on environment variables */ }
 const args = parseArgs();
 
-let config: Config;
+let baseUrl: string;
 let client: GitLabClient;
 
 if (args.mock) {
   console.log(chalk.yellow("Mock mode — using mock data, no API calls will be made.\n"));
-  config = { token: "mock", baseUrl: "https://gitlab.example.com", groupId: "1" };
+  baseUrl = "https://gitlab.example.com";
   client = createMockClient(args.startDate);
 } else {
-  config = validateEnv();
+  const config = validateEnv();
+  baseUrl = config.baseUrl;
   client = createClient(config);
 }
 
@@ -41,7 +42,7 @@ const onRetry = (msg: string): void => { spinner.text = msg; };
 try {
   // Fetch projects
   spinner.text = "Fetching projects...";
-  const projects = await client.fetchProjects(config.groupId, args.project, onRetry);
+  const projects = await client.fetchProjects(args.groupId, args.project, onRetry);
 
   if (projects.length === 0) {
     spinner.warn("No projects found in this group.");
@@ -93,8 +94,8 @@ try {
     dateRangeStart: format(args.startDate, "yyyy-MM-dd"),
     dateRangeEnd: format(args.endDate, "yyyy-MM-dd"),
     days: args.days,
-    baseUrl: config.baseUrl,
-    groupId: config.groupId,
+    baseUrl,
+    groupId: args.groupId,
     projectCount: projects.length,
     grandTotalJobs,
     grandTotalMinutes,

@@ -1,10 +1,10 @@
 export interface Config {
   token: string;
   baseUrl: string;
-  groupId: string;
 }
 
 export interface ParsedArgs {
+  groupId: string;
   days: number;
   project: number | undefined;
   output: string;

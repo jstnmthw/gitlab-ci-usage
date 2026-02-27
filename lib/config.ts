@@ -1,4 +1,4 @@
-import { program } from "commander";
+import { Command } from "commander";
 import chalk from "chalk";
 import { subDays } from "date-fns";
 import type { Config, ParsedArgs } from "./types.js";
@@ -16,30 +16,32 @@ function requireEnv(name: string): string {
 export function validateEnv(): Config {
   const token = requireEnv("GITLAB_TOKEN");
   const baseUrl = requireEnv("GITLAB_BASE_URL").replace(/\/+$/, "");
-  const groupId = requireEnv("GITLAB_GROUP_ID");
 
   if (!baseUrl.startsWith("https://")) {
     console.error(chalk.red("GITLAB_BASE_URL must use HTTPS to protect your token in transit."));
     process.exit(1);
   }
 
-  if (!/^\d+$/.test(groupId)) {
-    console.error(chalk.red("GITLAB_GROUP_ID must be a numeric ID."));
-    process.exit(1);
-  }
-
-  return { token, baseUrl, groupId };
+  return { token, baseUrl };
 }
 
 export function parseArgs(): ParsedArgs {
+  const program = new Command();
   program
     .name("gitlab-ci-usage")
     .description("Calculate total GitLab CI job runtime across all projects in a group")
+    .argument("<group-id>", "numeric ID of the GitLab group to analyze")
     .option("--days <number>", "number of days to look back", "30")
     .option("--project <id>", "restrict to a single project ID")
     .option("--output <filename>", "report filename", "report.md")
     .option("--mock", "generate a report with mock data (no GitLab credentials needed)")
     .parse();
+
+  const groupId = program.args[0];
+  if (!/^\d+$/.test(groupId)) {
+    console.error(chalk.red("<group-id> must be a numeric ID"));
+    process.exit(1);
+  }
 
   const opts = program.opts<{ days: string; project?: string; output: string; mock?: boolean }>();
 
@@ -62,5 +64,5 @@ export function parseArgs(): ParsedArgs {
   const endDate = new Date();
   const startDate = subDays(endDate, days);
 
-  return { days, project, output: opts.output, startDate, endDate, mock: opts.mock === true };
+  return { groupId, days, project, output: opts.output, startDate, endDate, mock: opts.mock === true };
 }
