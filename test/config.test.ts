@@ -36,6 +36,7 @@ describe("validateEnv()", () => {
     const mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
       throw new Error("process.exit called");
     });
+    const mockError = vi.spyOn(console, "error").mockImplementation(() => {});
 
     process.env.GITLAB_TOKEN = "glpat-abc123";
     // Missing GITLAB_BASE_URL and GITLAB_GROUP_ID
@@ -43,6 +44,7 @@ describe("validateEnv()", () => {
     expect(() => validateEnv()).toThrow("process.exit called");
     expect(mockExit).toHaveBeenCalledWith(1);
 
+    mockError.mockRestore();
     mockExit.mockRestore();
   });
 
@@ -59,6 +61,7 @@ describe("validateEnv()", () => {
     const mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
       throw new Error("process.exit called");
     });
+    const mockError = vi.spyOn(console, "error").mockImplementation(() => {});
 
     process.env.GITLAB_TOKEN = "glpat-abc123";
     process.env.GITLAB_BASE_URL = "http://gitlab.example.com";
@@ -67,6 +70,7 @@ describe("validateEnv()", () => {
     expect(() => validateEnv()).toThrow("process.exit called");
     expect(mockExit).toHaveBeenCalledWith(1);
 
+    mockError.mockRestore();
     mockExit.mockRestore();
   });
 
@@ -74,6 +78,7 @@ describe("validateEnv()", () => {
     const mockExit = vi.spyOn(process, "exit").mockImplementation(() => {
       throw new Error("process.exit called");
     });
+    const mockError = vi.spyOn(console, "error").mockImplementation(() => {});
 
     process.env.GITLAB_TOKEN = "glpat-abc123";
     process.env.GITLAB_BASE_URL = "https://gitlab.example.com";
@@ -82,6 +87,7 @@ describe("validateEnv()", () => {
     expect(() => validateEnv()).toThrow("process.exit called");
     expect(mockExit).toHaveBeenCalledWith(1);
 
+    mockError.mockRestore();
     mockExit.mockRestore();
   });
 });
