@@ -105,10 +105,36 @@ Rate-limited responses (HTTP 429) are automatically retried after the `Retry-Aft
 │   └── report.test.ts     # Tests for report output
 ├── tsconfig.json          # TypeScript config (type-checking only)
 ├── eslint.config.js       # ESLint + typescript-eslint config
+├── .prettierrc.json       # Prettier formatting config
+├── .husky/
+│   └── pre-commit         # Pre-commit hook (format, lint, type-check, test)
 └── vitest.config.ts
 ```
 
-## Testing
+## Development
+
+### Git Hooks
+
+[Husky](https://typicode.github.io/husky/) runs a pre-commit hook that:
+
+1. **Formats staged files** with [Prettier](https://prettier.io/) via [lint-staged](https://github.com/lint-staged/lint-staged) (auto-fixes and re-stages)
+2. **Lints** with ESLint
+3. **Type-checks** with `tsc --noEmit`
+4. **Runs tests** with Vitest
+
+Hooks are installed automatically when you run `pnpm install` (via the `prepare` script).
+
+### Formatting
+
+```bash
+# Format all files
+pnpm format
+
+# Check formatting without writing
+pnpm format:check
+```
+
+### Testing
 
 Tests use [Vitest](https://vitest.dev/) with mocked `global.fetch` — no real GitLab calls are made.
 
