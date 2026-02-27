@@ -62,7 +62,7 @@ try {
   }
 
   // Fetch jobs per project with concurrency control
-  const limit = pLimit(5);
+  const limit = pLimit(3);
   let completed = 0;
   const startISO = args.startDate.toISOString();
 

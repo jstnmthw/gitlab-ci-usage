@@ -214,23 +214,135 @@ describe("rate limiting", () => {
   });
 });
 
+describe("5xx server error retry", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  it("retries 5xx with exponential backoff and succeeds", async () => {
+    vi.useFakeTimers();
+    const client = createClient({ token: TOKEN, baseUrl: BASE_URL });
+    const project = mockProjects(1)[0];
+    const onRetry = vi.fn();
+
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(
+        new Response("Bad Gateway", { status: 502, statusText: "Bad Gateway" }),
+      )
+      .mockResolvedValueOnce(
+        new Response("Service Unavailable", {
+          status: 503,
+          statusText: "Service Unavailable",
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse(project));
+
+    const promise = client.fetchProjects("99", project.id, onRetry);
+    await vi.advanceTimersByTimeAsync(1000); // 1s backoff (attempt 0)
+    await vi.advanceTimersByTimeAsync(2000); // 2s backoff (attempt 1)
+    const result = await promise;
+
+    expect(onRetry).toHaveBeenCalledTimes(2);
+    expect(onRetry).toHaveBeenCalledWith(
+      expect.stringContaining("Server error 502"),
+    );
+    expect(onRetry).toHaveBeenCalledWith(
+      expect.stringContaining("Server error 503"),
+    );
+    expect(result).toHaveLength(1);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(3);
+  });
+
+  it("throws after exhausting retries on 5xx", async () => {
+    vi.useFakeTimers();
+    const client = createClient({ token: TOKEN, baseUrl: BASE_URL });
+
+    const make5xx = (): Response =>
+      new Response("Bad Gateway", { status: 502, statusText: "Bad Gateway" });
+
+    vi.spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(make5xx())
+      .mockResolvedValueOnce(make5xx())
+      .mockResolvedValueOnce(make5xx())
+      .mockResolvedValueOnce(make5xx());
+
+    const promise = client.fetchProjects("99", 1).catch((e: unknown) => e);
+    await vi.runAllTimersAsync();
+
+    const err = await promise;
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).message).toMatch(/server error after 3 retries.*502/);
+    expect(globalThis.fetch).toHaveBeenCalledTimes(4);
+  });
+});
+
+describe("proactive rate-limit throttling", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.useRealTimers();
+  });
+
+  it("pauses when RateLimit-Remaining is below threshold", async () => {
+    vi.useFakeTimers();
+    const client = createClient({ token: TOKEN, baseUrl: BASE_URL });
+    const project = mockProjects(1)[0];
+    const onRetry = vi.fn();
+
+    const resetEpoch = String(Math.floor(Date.now() / 1000) + 3);
+    const response = jsonResponse(project, {
+      "RateLimit-Remaining": "10",
+      "RateLimit-Reset": resetEpoch,
+    });
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(response);
+
+    const promise = client.fetchProjects("99", project.id, onRetry);
+    await vi.advanceTimersByTimeAsync(5000);
+    const result = await promise;
+
+    expect(onRetry).toHaveBeenCalledWith(
+      expect.stringContaining("Rate limit low"),
+    );
+    expect(result).toHaveLength(1);
+  });
+
+  it("does not pause when RateLimit-Remaining is above threshold", async () => {
+    const client = createClient({ token: TOKEN, baseUrl: BASE_URL });
+    const project = mockProjects(1)[0];
+    const onRetry = vi.fn();
+
+    const response = jsonResponse(project, {
+      "RateLimit-Remaining": "500",
+      "RateLimit-Reset": String(Math.floor(Date.now() / 1000) + 60),
+    });
+
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(response);
+
+    const result = await client.fetchProjects("99", project.id, onRetry);
+
+    expect(onRetry).not.toHaveBeenCalled();
+    expect(result).toHaveLength(1);
+  });
+});
+
 describe("error handling", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("non-OK response throws error", async () => {
+  it("non-OK non-retryable response throws error", async () => {
     const client = createClient({ token: TOKEN, baseUrl: BASE_URL });
 
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-      new Response("Internal Server Error", {
-        status: 500,
-        statusText: "Internal Server Error",
+      new Response("Forbidden", {
+        status: 403,
+        statusText: "Forbidden",
       }),
     );
 
     await expect(client.fetchProjects("99", 1)).rejects.toThrow(
-      /GitLab API error.*500/,
+      /GitLab API error.*403/,
     );
   });
 });

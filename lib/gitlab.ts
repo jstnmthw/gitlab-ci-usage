@@ -17,6 +17,7 @@ function parseLinkNext(header: string | null): string | null {
 }
 
 const MAX_RETRIES = 3;
+const RATE_LIMIT_REMAINING_THRESHOLD = 50;
 
 async function gitlabFetch(
   url: string,
@@ -44,11 +45,46 @@ async function gitlabFetch(
       continue;
     }
 
+    if (res.status >= 500) {
+      if (attempt === MAX_RETRIES) {
+        const body = await res.text();
+        throw new Error(
+          `GitLab API server error after ${String(MAX_RETRIES)} retries: ${String(res.status)} ${res.statusText} — ${url}\n${body}`,
+        );
+      }
+      const backoff = 1000 * 2 ** attempt;
+      if (onRetry)
+        onRetry(
+          `Server error ${String(res.status)} — retrying in ${String(backoff / 1000)}s (attempt ${String(attempt + 1)}/${String(MAX_RETRIES)})...`,
+        );
+      await sleep(backoff);
+      continue;
+    }
+
     if (!res.ok) {
       const body = await res.text();
       throw new Error(
         `GitLab API error: ${String(res.status)} ${res.statusText} — ${url}\n${body}`,
       );
+    }
+
+    // Proactive rate-limit throttling
+    const remaining = res.headers.get("RateLimit-Remaining");
+    if (remaining != null) {
+      const remainingCount = parseInt(remaining, 10);
+      if (remainingCount < RATE_LIMIT_REMAINING_THRESHOLD) {
+        const resetHeader = res.headers.get("RateLimit-Reset");
+        let waitMs = 5000; // default 5s
+        if (resetHeader) {
+          const resetEpoch = parseInt(resetHeader, 10);
+          waitMs = Math.max(resetEpoch * 1000 - Date.now(), 1000);
+        }
+        if (onRetry)
+          onRetry(
+            `Rate limit low (${remaining} remaining) — pausing ${String(Math.ceil(waitMs / 1000))}s...`,
+          );
+        await sleep(waitMs);
+      }
     }
 
     return res;
